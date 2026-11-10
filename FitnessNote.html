@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#141a2e">
+    <title>像素健身日誌</title>
+    <style>
+        /* CSS Zoning: Font & Tokens */
+        @font-face {
+            font-family: 'Cubic11';
+            src: url('https://cdn.jsdelivr.net/gh/ACh-K/Cubic-11@1.451/fonts/web/Cubic_11.woff2') format('woff2');
+            font-display: swap;
+        }
+        :root {
+            --bg: #141a2e;
+            --bg2: #1b2240;
+            --panel: #222b4d;
+            --panel2: #2c3761;
+            --hi: #3a4a80;
+            --shade: #161c35;
+            --line: #090c18;
+            --text: #eef2ff;
+            --muted: #94a1cc;
+            --acc: #49a9f0;
+            --acc-ink: #0d1328;
+            --good: #5ee08a;
+            --warn: #f7d14c;
+            --bad: #ff6b6b;
+            --paper: #f8f6ec;
+            --ink: #232845;
+            --px: 4px;
+            --safe-b: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* CSS Zoning: Reset & Base */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            margin: 0 auto;
+            max-width: 520px;
+            min-height: 100vh;
+            padding: 12px 14px calc(190px + var(--safe-b));
+            font-family: 'Cubic11', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+            color: var(--text);
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.5px),
+                linear-gradient(180deg, var(--bg2), var(--bg) 420px);
+            background-size: 16px 16px, 100% 100%;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            letter-spacing: .02em;
+        }
+        h1, h2, h3, p { margin: 0; }
+        button { font-family: inherit; }
+        .hidden { display: none !important; }
+
+        /* CSS Zoning: Pixel Primitives */
+        .px-box {
+            position: relative;
+            background: var(--panel);
+            margin: 6px 4px 16px;
+            padding: 14px 12px;
+            box-shadow:
+                0 calc(var(--px) * -1) 0 0 var(--line),
+                0 var(--px) 0 0 var(--line),
+                calc(var(--px) * -1) 0 0 0 var(--line),
+                var(--px) 0 0 0 var(--line),
+                inset 0 var(--px) 0 0 var(--hi),
+                inset 0 calc(var(--px) * -1) 0 0 var(--shade);
+        }
+        .btn {
+            --b: 3px;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            margin: var(--b);
+            padding: 12px 12px;
+            border: 0; border-radius: 0;
+            background: var(--acc);
+            color: var(--acc-ink);
+            font-size: 15px;
+            line-height: 1.1;
+            cursor: pointer;
+            box-shadow:
+                0 calc(var(--b) * -1) 0 0 var(--line), 0 var(--b) 0 0 var(--line),
+                calc(var(--b) * -1) 0 0 0 var(--line), var(--b) 0 0 0 var(--line),
+                inset 0 -4px 0 0 rgba(0,0,0,.28), inset 0 3px 0 0 rgba(255,255,255,.35);
+            transition: transform 60ms steps(1), filter 120ms;
+            user-select: none;
+        }
+        .btn:active { transform: translateY(2px); box-shadow:
+                0 calc(var(--b) * -1) 0 0 var(--line), 0 var(--b) 0 0 var(--line),
+                calc(var(--b) * -1) 0 0 0 var(--line), var(--b) 0 0 0 var(--line),
+                inset 0 4px 0 0 rgba(0,0,0,.28); }
+        .btn.ghost { background: var(--panel2); color: var(--text); }
+        .btn.warn { background: var(--warn); }
+        .btn.danger { background: #4a2230; color: var(--bad); }
+        .btn.small { padding: 8px 10px; font-size: 13px; }
+        .btn.block { display: flex; width: calc(100% - 6px); }
+
+        input, textarea, select {
+            width: 100%;
+            font-family: inherit;
+            font-size: 16px;
+            color: var(--text);
+            background: #0f1428;
+            border: 0; border-radius: 0;
+            padding: 10px;
+            box-shadow: inset 0 0 0 2px var(--line), inset 3px 3px 0 0 rgba(0,0,0,.45);
+            -webkit-appearance: none; appearance: none;
+        }
+        input:focus, textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--acc), inset 3px 3px 0 0 rgba(0,0,0,.45); }
+        input::placeholder, textarea::placeholder { color: #55628f; }
+        input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        input[type=date] { min-height: 40px; }
+        input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .7; }
+
+        /* CSS Zoning: Hero (battle scene) */
+        .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 4px 12px; }
+        .logo { font-size: 20px; line-height: 1; color: var(--warn); text-shadow: 2px 2px 0 var(--line), -1px -1px 0 #b0861d; letter-spacing: .08em; }
+        .logo small { display: block; font-size: 11px; color: var(--muted); text-shadow: none; letter-spacing: .1em; margin-top: 6px; }
+        .date-pill { width: 150px; flex: 0 0 auto; font-size: 14px; padding: 8px; }
+
+        .stage {
+            position: relative;
+            height: 150px;
+            margin: 4px 4px 0;
+            overflow: hidden;
+            background:
+                linear-gradient(180deg, transparent 62%, #2f7a4e 62%, #2f7a4e 64%, #3f9a5f 64%),
+                linear-gradient(180deg, #5d8fe0 0%, #8fc0f5 62%);
+            box-shadow: 0 -4px 0 0 var(--line), 4px 0 0 0 var(--line), -4px 0 0 0 var(--line);
+        }
+        .stage::before, .stage::after {
+            content: ''; position: absolute; width: 8px; height: 8px; background: transparent;
+            box-shadow:
+                8px 0 #fff, 16px 0 #fff, 24px 0 #fff,
+                0 8px #fff, 8px 8px #fff, 16px 8px #fff, 24px 8px #fff, 32px 8px #fff, 40px 8px #e4efff;
+            image-rendering: pixelated;
+            animation: cloud 28s linear infinite;
+        }
+        .stage::before { top: 14px; left: -60px; }
+        .stage::after { top: 40px; left: -60px; animation-duration: 41s; animation-delay: -18s; transform: scale(.7); }
+        @keyframes cloud { from { translate: 0 0; } to { translate: 620px 0; } }
+        .stage.night {
+            background:
+                linear-gradient(180deg, transparent 62%, #24513a 62%, #24513a 64%, #2e6b47 64%),
+                linear-gradient(180deg, #1d2452 0%, #3b3f7a 62%);
+        }
+        .platform {
+            position: absolute; left: 66%; bottom: 14px; width: 150px; height: 26px; translate: -50% 0;
+            background: #6cc77f;
+            border-radius: 50%;
+            box-shadow: inset 0 -6px 0 0 #3f9a5f, 0 0 0 3px var(--line);
+        }
+        .mascot {
+            position: absolute; left: 66%; bottom: 26px; translate: -50% 0;
+            border: 0; background: none; padding: 0; cursor: pointer;
+            filter: drop-shadow(0 4px 0 rgba(0,0,0,.25));
+        }
+        .mon-svg { display: block; }
+        .mon-tag {
+            position: absolute; left: 8px; top: 8px; min-width: 128px;
+            background: var(--paper); color: var(--ink); padding: 6px 8px 7px;
+            font-size: 13px;
+            box-shadow: 0 -3px 0 var(--line), 0 3px 0 var(--line), -3px 0 0 var(--line), 3px 0 0 var(--line), inset 0 -3px 0 #d8d3bd;
+        }
+        .mon-tag .row { display: flex; justify-content: space-between; gap: 8px; }
+        .mon-tag i { font-style: normal; }
+        .mini-bar { margin-top: 5px; height: 8px; background: #4b5170; box-shadow: 0 0 0 2px var(--ink); position: relative; overflow: hidden; }
+        .mini-bar > i { position: absolute; inset: 0 auto 0 0; width: 0; background: #40a0f8; transition: width .4s steps(8); }
+        .exp-row { margin-top: 3px; font-size: 10px; color: #6b7090; }
+
+        .dialog {
+            position: relative;
+            margin: 0 4px 18px;
+            min-height: 64px;
+            padding: 12px 34px 12px 14px;
+            background: var(--paper); color: var(--ink);
+            font-size: 15px; line-height: 1.55;
+            box-shadow:
+                0 4px 0 0 var(--line), -4px 0 0 0 var(--line), 4px 0 0 0 var(--line),
+                inset 0 0 0 3px #6b7bb8, inset 0 0 0 5px var(--paper), inset 0 0 0 7px #b9c2e6;
+        }
+        .dialog .caret { position: absolute; right: 14px; bottom: 8px; color: #d9463a; font-size: 12px; animation: blink 1s steps(1) infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* CSS Zoning: Mascot Sprites & Animations */
+        .mon-hero, .mon-chip, .mon-thumb { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+        .mon-hero { height: auto; max-width: 160px; max-height: 108px; }
+        .mon-chip { width: 44px; height: 40px; object-fit: contain; }
+        .mon-thumb { width: 96px; height: 96px; margin: -14px auto -10px; }
+        .mon-missing { display: grid; place-items: center; width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; background: linear-gradient(#e94b4b 50%, #fff 50%); box-shadow: 0 0 0 3px var(--line); color: var(--line); font-size: 14px; }
+        .mascot.jump img, .mascot.jump .mon-missing { animation: jump .6s steps(1) 1; }
+        @keyframes jump { 0% { transform: translateY(0); } 20% { transform: translateY(-14px); } 40% { transform: translateY(-24px) rotate(-6deg); } 60% { transform: translateY(-14px) rotate(6deg); } 80% { transform: translateY(0) scale(1.1, .9); } }
+        .mascot.levelup img { animation: levelup 1.2s steps(1) 1; }
+        @keyframes levelup { 0%, 30%, 60% { filter: brightness(3) saturate(0); } 15%, 45%, 75% { filter: none; } 85% { transform: translateY(-18px); } }
+        .stage.flash::after { content: 'LEVEL UP!'; position: absolute; inset: 0; display: grid; place-items: center; width: auto; height: auto; box-shadow: none; translate: 0 0; transform: none; color: var(--warn); font-size: 24px; text-shadow: 3px 3px 0 var(--line); background: rgba(255,255,255,.25); animation: blink .3s steps(1) 4; }
+        .mascot.evolving img { animation: evo 2.8s linear 1 forwards; }
+        @keyframes evo {
+            0%, 6%, 14%, 20%, 26%, 31%, 36%, 40%, 44%, 48%, 52%, 56%, 60%, 64%, 68%, 72%, 76%, 80%, 84%, 88%, 92%, 96% { filter: brightness(0) invert(1); transform: scale(1); }
+            3%, 10%, 17%, 23%, 28.5%, 33.5%, 38%, 42%, 46%, 50%, 54%, 58%, 62%, 66%, 70%, 74%, 78%, 82%, 86%, 90%, 94% { filter: brightness(0) invert(1); transform: scale(.75, 1.15); }
+            100% { filter: brightness(0) invert(1); transform: scale(1.1); }
+        }
+        .stage.evo-bg { background: radial-gradient(circle at 66% 70%, #3a3f7a, #0b0f1c 70%); }
+        .stage.evo-bg::before, .stage.evo-bg::after { display: none; }
+        .stage.evo-bg .platform { background: #2a2f5a; box-shadow: inset 0 -6px 0 0 #1b1f40, 0 0 0 3px var(--line); }
+        .day-chip b small { display: block; font-size: 10px; opacity: .8; font-weight: normal; }
+        .swap-btn { position: absolute; left: 8px; bottom: 8px; z-index: 2; border: 0; padding: 6px 8px; font-size: 12px; background: var(--paper); color: var(--ink); cursor: pointer; box-shadow: 0 0 0 3px var(--line), inset 0 -3px 0 #d8d3bd; }
+        .swap-btn:active { transform: translateY(2px); }
+
+        /* CSS Zoning: Pokémon Picker */
+        .mon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin: 12px 0; }
+        .mon-cell { position: relative; border: 0; padding: 6px 2px 8px; background: var(--panel2); color: var(--text); cursor: pointer; font-size: 13px; box-shadow: 0 0 0 3px var(--line), inset 0 -3px 0 var(--shade); }
+        .mon-cell small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+        .mon-cell .type-dot { position: absolute; left: 6px; top: 6px; width: 8px; height: 8px; box-shadow: 0 0 0 2px var(--line); }
+        .mon-cell.sel { background: var(--acc); color: var(--acc-ink); }
+        .mon-cell.sel small { color: var(--acc-ink); }
+        .mon-cell:active { transform: translateY(2px); }
+
+        /* CSS Zoning: Day Tabs */
+        .days { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(60px, 1fr); gap: 10px; overflow-x: auto; padding: 6px 6px 10px; margin: 0 -2px 6px; scrollbar-width: none; }
+        .days::-webkit-scrollbar { display: none; }
+        .day-chip {
+            position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+            padding: 14px 2px 6px; border: 0; cursor: pointer;
+            background: var(--panel); color: var(--muted); font-size: 12px;
+            box-shadow: 0 -3px 0 var(--line), 0 3px 0 var(--line), -3px 0 0 var(--line), 3px 0 0 var(--line), inset 0 -3px 0 var(--shade);
+            transition: transform 80ms steps(1);
+        }
+        .day-chip .mon-svg { filter: grayscale(.55) brightness(.85); }
+        .day-chip.active { background: var(--chip, var(--acc)); color: var(--acc-ink); transform: translateY(-3px); }
+        .day-chip.active .mon-svg { filter: none; }
+        .day-chip .done-dot { position: absolute; left: 4px; top: 4px; width: 6px; height: 6px; background: var(--good); box-shadow: 0 0 0 2px var(--line); }
+        .day-chip .next-tag { position: absolute; top: 3px; right: 3px; z-index: 1; background: var(--warn); color: var(--ink); font-size: 10px; line-height: 1; white-space: nowrap; padding: 2px 3px; box-shadow: 0 0 0 2px var(--line); animation: blink 1.2s steps(1) infinite; }
+
+        .day-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .day-bar small { color: var(--acc); font-size: 12px; }
+        .day-bar h2 { font-size: 17px; margin-top: 4px; line-height: 1.35; }
+        .day-bar .btn { flex: 0 0 auto; }
+        .tip-line { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+        /* CSS Zoning: Exercise Cards */
+        .ex-card { animation: pop-in .4s steps(4) both; animation-delay: calc(var(--d, 0) * 50ms); }
+        @keyframes pop-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        .ex-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--acc); }
+        .ex-head { display: flex; align-items: center; gap: 8px; margin-left: 4px; }
+        .ex-no { flex: 0 0 auto; min-width: 26px; height: 26px; display: grid; place-items: center; font-size: 13px; background: var(--line); color: var(--acc); }
+        .ex-name { flex: 1; font-size: 17px; font-weight: normal; line-height: 1.3; word-break: break-word; }
+        .ex-count { font-size: 13px; color: var(--muted); }
+        .ex-card.clear .ex-count { color: var(--good); }
+        .stamp { display: none; position: absolute; right: 10px; top: -12px; background: var(--good); color: var(--ink); font-size: 12px; padding: 2px 6px; box-shadow: 0 0 0 3px var(--line); transform: rotate(6deg); }
+        .ex-card.clear .stamp { display: block; animation: stamp .35s steps(3) both; }
+        @keyframes stamp { from { transform: scale(2.2) rotate(-10deg); opacity: 0; } to { transform: scale(1) rotate(6deg); opacity: 1; } }
+
+        .ex-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0 4px; }
+        .tag { font-size: 12px; padding: 3px 6px; background: var(--panel2); color: var(--text); box-shadow: 0 0 0 2px var(--line); }
+        .tag.acc { background: var(--acc); color: var(--acc-ink); }
+        .ex-note { margin: 8px 0 0 4px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+        .ex-last { margin: 8px 0 0 4px; font-size: 12px; color: #b6c1e8; line-height: 1.5; }
+        .ex-up { display: inline-block; margin: 8px 0 0 4px; padding: 4px 8px; font-size: 12px; background: rgba(247,209,76,.15); color: var(--warn); box-shadow: 0 0 0 2px #6d5a16; animation: blink 1.6s steps(1) 3; }
+
+        .sets { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .set-row { display: grid; grid-template-columns: 30px 1fr 12px 1fr 38px; gap: 6px; align-items: center; padding: 6px; background: #1a2241; box-shadow: 0 0 0 2px var(--line); position: relative; transition: background .2s steps(2); }
+        .set-row.done { background: color-mix(in srgb, var(--acc) 22%, #1a2241); }
+        .set-row.flash { animation: flash .45s steps(3) 1; }
+        @keyframes flash { 0% { background: #fff; } 50% { background: var(--acc); } }
+        .set-tag { height: 30px; display: grid; place-items: center; font-size: 13px; background: var(--panel2); color: var(--muted); box-shadow: 0 0 0 2px var(--line); }
+        .set-row.warm .set-tag { background: #4a3520; color: #ffb15c; }
+        .set-row.done .set-tag { background: var(--acc); color: var(--acc-ink); }
+        .field { position: relative; display: block; min-width: 0; }
+        .field input { text-align: center; padding: 9px 22px 9px 6px; font-size: 18px; }
+        .field em { position: absolute; right: 6px; top: 50%; translate: 0 -50%; font-style: normal; font-size: 11px; color: var(--muted); pointer-events: none; }
+        .x { text-align: center; color: var(--muted); font-size: 13px; }
+        .del { height: 38px; width: 38px; border: 0; background: #3a1f2c; color: var(--bad); font-size: 15px; cursor: pointer; box-shadow: 0 0 0 2px var(--line), inset 0 -3px 0 rgba(0,0,0,.3); }
+        .del:active { transform: translateY(2px); }
+        .add-set { margin-top: 12px; }
+        .exp-pop { position: absolute; right: 52px; top: -4px; color: var(--warn); font-size: 13px; text-shadow: 2px 2px 0 var(--line); pointer-events: none; animation: exp-pop .9s steps(6) forwards; }
+        @keyframes exp-pop { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-26px); opacity: 0; } }
+
+        /* CSS Zoning: Editor */
+        .ed-top { display: flex; gap: 8px; align-items: center; }
+        .ed-top .ed-name { flex: 1; min-width: 0; }
+        .ed-move { display: flex; gap: 6px; }
+        .ed-move button { width: 34px; height: 38px; border: 0; background: var(--panel2); color: var(--text); cursor: pointer; box-shadow: 0 0 0 2px var(--line); font-size: 13px; }
+        .ed-move button:active { transform: translateY(2px); }
+        .ed-move .del { width: 34px; }
+        .ed-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+        .ed-grid label, .lbl { display: block; font-size: 11px; color: var(--muted); }
+        .ed-grid input { margin-top: 4px; text-align: center; padding: 8px 4px; }
+        .ed-note { margin-top: 8px; font-size: 14px; }
+        .add-row { display: flex; gap: 8px; align-items: center; }
+        .add-row input { flex: 1; min-width: 0; }
+        .ed-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 20px; }
+
+        /* CSS Zoning: Bag (settings) */
+        .bag summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
+        .bag summary::-webkit-details-marker { display: none; }
+        .bag summary::after { content: '▶'; font-size: 11px; color: var(--acc); transition: transform .15s steps(2); }
+        .bag[open] summary::after { transform: rotate(90deg); }
+        .bag h4 { margin: 14px 0 6px; font-size: 13px; color: var(--acc); font-weight: normal; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .bag p { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 8px; }
+
+        /* CSS Zoning: Dock (bottom bar) */
+        .dock {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+            padding: 10px 14px calc(10px + var(--safe-b));
+            background: rgba(16, 21, 40, .96);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 -4px 0 0 var(--line), 0 -8px 0 0 var(--panel2);
+        }
+        .dock-inner { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+        .dock-row { display: flex; align-items: center; gap: 8px; min-height: 26px; font-size: 13px; }
+        .exp-label { color: var(--warn); font-size: 12px; }
+        .exp-bar { flex: 1; height: 12px; background: #0b0f1f; box-shadow: 0 0 0 2px var(--line), inset 0 0 0 2px #2b3460; position: relative; overflow: hidden; }
+        .exp-bar > i {
+            position: absolute; inset: 2px auto 2px 2px; width: 0; max-width: calc(100% - 4px);
+            background: repeating-linear-gradient(90deg, var(--acc) 0 6px, color-mix(in srgb, var(--acc) 70%, #fff) 6px 8px);
+            background-size: 16px 100%;
+            transition: width .5s steps(10);
+            animation: shimmer 1s steps(4) infinite;
+        }
+        @keyframes shimmer { to { background-position: 16px 0; } }
+        .exp-text { min-width: 64px; text-align: right; color: var(--text); font-size: 12px; }
+        .pill { padding: 3px 7px; background: var(--line); color: var(--acc); font-size: 13px; }
+        .quote { flex: 1; text-align: right; color: var(--good); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .rest { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+        .rest span { color: var(--muted); font-size: 12px; }
+        .rest b { font-weight: normal; font-size: 16px; color: var(--warn); min-width: 46px; text-align: center; }
+        .rest.go b { color: var(--good); animation: blink .4s steps(1) infinite; }
+        .rest button { border: 0; background: var(--panel2); color: var(--text); font-size: 12px; padding: 5px 8px; box-shadow: 0 0 0 2px var(--line); cursor: pointer; }
+        .dock-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+        /* CSS Zoning: Modal & Toast */
+        .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center; background: rgba(5, 7, 16, .78); opacity: 0; pointer-events: none; transition: opacity .2s steps(3); padding: 12px 10px calc(12px + var(--safe-b)); }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .modal-card { width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; transform: translateY(30px); transition: transform .25s steps(4); margin: 4px; }
+        .modal.active .modal-card { transform: none; }
+        .modal-card h3 { font-size: 16px; font-weight: normal; color: var(--acc); margin-bottom: 12px; }
+        .modal-card textarea { min-height: 220px; font-size: 13px; line-height: 1.45; font-family: ui-monospace, Menlo, Consolas, monospace; }
+        .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+        .summary-text { white-space: pre-wrap; background: #0f1428; padding: 12px; font-size: 13px; line-height: 1.6; box-shadow: inset 0 0 0 2px var(--line); margin-top: 12px; }
+        .bars { display: flex; flex-direction: column; gap: 8px; }
+        .bar-row { display: grid; grid-template-columns: 82px 1fr; gap: 8px; align-items: center; font-size: 12px; }
+        .bar-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--muted); }
+        .bar-track { position: relative; height: 18px; background: #0f1428; box-shadow: 0 0 0 2px var(--line); }
+        .bar-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--acc); box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); animation: grow .6s steps(8) forwards; }
+        .bar-last { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--warn); }
+        .bar-val { position: absolute; right: 4px; top: 50%; translate: 0 -50%; font-size: 11px; color: var(--text); text-shadow: 1px 1px 0 var(--line); }
+        @keyframes grow { from { width: 0; } to { width: var(--w); } }
+        .legend { font-size: 11px; color: var(--muted); margin-top: 8px; }
+        .legend i { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin: 0 3px 0 8px; }
+
+        .toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); z-index: 200; translate: -50% -80px; max-width: calc(100% - 40px); padding: 10px 14px; background: var(--paper); color: var(--ink); font-size: 14px; box-shadow: 0 -3px 0 var(--line), 0 3px 0 var(--line), -3px 0 0 var(--line), 3px 0 0 var(--line); transition: translate .25s steps(4); }
+        .toast.show { translate: -50% 0; }
+
+        @media (max-width: 360px) {
+            body { padding-left: 10px; padding-right: 10px; }
+            .set-row { grid-template-columns: 26px 1fr 10px 1fr 34px; gap: 4px; }
+            .del { width: 34px; }
+            .field input { font-size: 16px; padding-right: 20px; }
+            .date-pill { width: 130px; }
+            .ed-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="hero-top">
+            <div class="logo">PIXEL GYM<small>器械增肌冒險日誌</small></div>
+            <input type="date" id="dateInput" class="date-pill" aria-label="訓練日期">
+        </div>
+        <div class="stage" id="stage">
+            <div class="mon-tag">
+                <div class="row"><b id="monName">水躍魚</b><span>Lv<i id="monLv">1</i></span></div>
+                <div class="mini-bar"><i id="hpFill"></i></div>
+                <div class="row exp-row"><span>EXP</span><span id="monExp">0%</span></div>
+            </div>
+            <div class="platform"></div>
+            <button class="mascot" id="mascot" aria-label="夥伴"></button>
+            <button class="swap-btn" id="swapBtn">換夥伴</button>
+        </div>
+        <div class="dialog" id="dialog"><p id="dialogText"></p><span class="caret">▼</span></div>
+    </header>
+
+    <nav class="days" id="dayTabs"></nav>
+
+    <div class="px-box day-bar" id="dayBar">
+        <div>
+            <small id="dayIndex">DAY 1 / 5</small>
+            <h2 id="dayTitle"></h2>
+        </div>
+        <button id="editBtn" class="btn ghost small">編輯</button>
+    </div>
+
+    <main id="workoutContainer"></main>
+
+    <details class="px-box bag" id="bag">
+        <summary>道具包｜課表與備份</summary>
+        <h4>課表</h4>
+        <div class="btn-grid">
+            <button class="btn small" id="exportProgramBtn">匯出課表</button>
+            <button class="btn small warn" id="importProgramBtn">匯入課表</button>
+        </div>
+        <button class="btn ghost small block" id="resetProgramBtn">還原預設課表</button>
+        <p>匯出的課表下方附有匯入格式說明，整段丟給 AI 修改後，貼回「匯入課表」即可。匯入課表不會刪除訓練紀錄。</p>
+        <h4>訓練紀錄備份</h4>
+        <div class="btn-grid">
+            <button class="btn ghost small" id="exportDataBtn">匯出完整備份</button>
+            <button class="btn ghost small" id="importDataBtn">匯入完整備份</button>
+        </div>
+        <input type="file" id="importDataFile" accept=".json,application/json" class="hidden">
+    </details>
+
+    <footer class="dock" id="dock">
+        <div class="dock-inner">
+            <div class="dock-row">
+                <span class="exp-label">EXP</span>
+                <div class="exp-bar"><i id="expFill"></i></div>
+                <span class="exp-text" id="expText">0/0</span>
+            </div>
+            <div class="dock-row">
+                <span class="pill" id="durationPill">TIME 00:00</span>
+                <div class="rest hidden" id="restBox">
+                    <span>休息</span><b id="restTime">0:00</b>
+                    <button data-rest="+15">+15</button>
+                    <button data-rest="skip">略過</button>
+                </div>
+                <span class="quote" id="quote"></span>
+            </div>
+            <div class="dock-btns">
+                <button class="btn" id="summaryBtn">戰績總結</button>
+                <button class="btn ghost" id="copyBtn">複製紀錄</button>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal" id="summaryModal">
+        <div class="px-box modal-card">
+            <h3>容量分析（重量 × 次數）</h3>
+            <div class="bars" id="bars"></div>
+            <div class="legend"><i style="background:var(--acc)"></i>今天<i style="background:var(--warn)"></i>上次</div>
+            <div class="summary-text" id="summaryText"></div>
+            <div class="modal-actions">
+                <button class="btn ghost" data-close>關閉</button>
+                <button class="btn" id="modalCopyBtn">複製</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="exportModal">
+        <div class="px-box modal-card">
+            <h3>匯出課表</h3>
+            <textarea id="exportText" readonly></textarea>
+            <div class="modal-actions">
+                <button class="btn ghost" id="downloadProgramBtn">下載 .txt</button>
+                <button class="btn" id="copyProgramBtn">複製全部</button>
+            </div>
+            <button class="btn ghost block" data-close>關閉</button>
+        </div>
+    </div>
+
+    <div class="modal" id="importModal">
+        <div class="px-box modal-card">
+            <h3>匯入課表</h3>
+            <textarea id="importText" placeholder="把匯出的課表文字（或 AI 改好的內容）貼在這裡"></textarea>
+            <div class="modal-actions">
+                <button class="btn ghost" id="pickProgramFileBtn">選擇檔案</button>
+                <button class="btn warn" id="confirmImportBtn">確認匯入</button>
+            </div>
+            <button class="btn ghost block" data-close>取消</button>
+            <input type="file" id="importProgramFile" accept=".txt,.json,text/plain,application/json" class="hidden">
+        </div>
+    </div>
+
+    <div class="modal" id="pickerModal">
+        <div class="px-box modal-card">
+            <h3 id="pickerTitle">選擇夥伴</h3>
+            <input id="pickerSearch" placeholder="搜尋寶可夢名稱">
+            <div class="mon-grid" id="monGrid"></div>
+            <button class="btn ghost block" data-close>關閉</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* JS Zoning: Pokédex (animated pixel sprites from PokeAPI / Showdown) */
+        const SPRITE_GIF = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${id}.gif`;
+        const SPRITE_PNG = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+        const TYPE_COLORS = {
+            water: '#49a9f0', ground: '#d08c5b', dragon: '#8e7dff', fire: '#f5894a', grass: '#5ec46a', electric: '#f7d14c',
+            psychic: '#f06c9b', fighting: '#e8644e', ghost: '#9a7be0', normal: '#cfc9ad', rock: '#c9aa62', steel: '#9fb3c8',
+            bug: '#a8c43c', ice: '#7fdcf0', poison: '#b77bd8'
+        };
+        /* 50 evolution lines: [id, name, type, evolve-at level]. Level-up evolutions use the official level;
+           trade / stone / friendship evolutions (marked *) are given a fixed level here. */
+        const EVO_LINES = [
+            [[1, '妙蛙種子', 'grass', 1], [2, '妙蛙草', 'grass', 16], [3, '妙蛙花', 'grass', 32]],
+            [[4, '小火龍', 'fire', 1], [5, '火恐龍', 'fire', 16], [6, '噴火龍', 'fire', 36]],
+            [[7, '傑尼龜', 'water', 1], [8, '卡咪龜', 'water', 16], [9, '水箭龜', 'water', 36]],
+            [[172, '皮丘', 'electric', 1], [25, '皮卡丘', 'electric', 10, '*'], [26, '雷丘', 'electric', 30, '*']],
+            [[27, '穿山鼠', 'ground', 1], [28, '穿山王', 'ground', 22]],
+            [[50, '地鼠', 'ground', 1], [51, '三地鼠', 'ground', 26]],
+            [[54, '可達鴨', 'water', 1], [55, '哥達鴨', 'water', 33]],
+            [[60, '蚊香蝌蚪', 'water', 1], [61, '蚊香君', 'water', 25], [62, '快泳蛙', 'fighting', 40, '*']],
+            [[66, '腕力', 'fighting', 1], [67, '豪力', 'fighting', 28], [68, '怪力', 'fighting', 40, '*']],
+            [[74, '小拳石', 'rock', 1], [75, '隆隆石', 'rock', 25], [76, '隆隆岩', 'rock', 40, '*']],
+            [[92, '鬼斯', 'ghost', 1], [93, '鬼斯通', 'ghost', 25], [94, '耿鬼', 'ghost', 40, '*']],
+            [[95, '大岩蛇', 'rock', 1], [208, '大鋼蛇', 'steel', 35, '*']],
+            [[104, '卡拉卡拉', 'ground', 1], [105, '嘎啦嘎啦', 'ground', 28]],
+            [[111, '獨角犀牛', 'ground', 1], [112, '鑽角犀獸', 'ground', 42], [464, '超甲狂犀', 'ground', 55, '*']],
+            [[129, '鯉魚王', 'water', 1], [130, '暴鯉龍', 'water', 20]],
+            [[131, '拉普拉斯', 'ice', 1]],
+            [[133, '伊布', 'normal', 1], [134, '水伊布', 'water', 25, '*']],
+            [[147, '迷你龍', 'dragon', 1], [148, '哈克龍', 'dragon', 30], [149, '快龍', 'dragon', 55]],
+            [[158, '小鋸鱷', 'water', 1], [159, '藍鱷', 'water', 18], [160, '大力鱷', 'water', 30]],
+            [[194, '烏波', 'water', 1], [195, '沼王', 'water', 20]],
+            [[10253, '帕底亞烏波', 'poison', 1], [980, '土王', 'ground', 20]],
+            [[214, '赫拉克羅斯', 'bug', 1]],
+            [[220, '小山豬', 'ice', 1], [221, '長毛豬', 'ground', 33], [473, '象牙豬', 'ice', 45, '*']],
+            [[246, '幼基拉斯', 'rock', 1], [247, '沙基拉斯', 'rock', 30], [248, '班基拉斯', 'rock', 55]],
+            [[252, '木守宮', 'grass', 1], [253, '森林蜥蜴', 'grass', 16], [254, '蜥蜴王', 'grass', 36]],
+            [[255, '火稚雞', 'fire', 1], [256, '力壯雞', 'fighting', 16], [257, '火焰雞', 'fire', 36]],
+            [[258, '水躍魚', 'water', 1], [259, '沼躍魚', 'ground', 16], [260, '巨沼怪', 'water', 36]],
+            [[296, '幕下力士', 'fighting', 1], [297, '鐵掌力士', 'fighting', 24]],
+            [[339, '泥泥鰍', 'water', 1], [340, '鯰魚王', 'ground', 30]],
+            [[371, '寶貝龍', 'dragon', 1], [372, '甲殼龍', 'dragon', 30], [373, '暴飛龍', 'dragon', 50]],
+            [[374, '鐵啞鈴', 'steel', 1], [375, '金屬怪', 'steel', 20], [376, '巨金怪', 'steel', 45]],
+            [[387, '草苗龜', 'grass', 1], [388, '樹林龜', 'grass', 18], [389, '土台龜', 'ground', 32]],
+            [[390, '小火焰猴', 'fire', 1], [391, '猛火猴', 'fighting', 14], [392, '烈焰猴', 'fire', 36]],
+            [[393, '波加曼', 'water', 1], [394, '波皇子', 'water', 16], [395, '帝王拿波', 'steel', 36]],
+            [[422, '無殼海兔', 'water', 1], [423, '海兔獸', 'water', 30]],
+            [[443, '圓陸鯊', 'dragon', 1], [444, '尖牙陸鯊', 'dragon', 24], [445, '烈咬陸鯊', 'dragon', 48]],
+            [[446, '小卡比獸', 'normal', 1], [143, '卡比獸', 'normal', 20, '*']],
+            [[447, '利歐路', 'fighting', 1], [448, '路卡利歐', 'fighting', 25, '*']],
+            [[449, '沙河馬', 'ground', 1], [450, '河馬獸', 'ground', 34]],
+            [[529, '螺釘地鼠', 'ground', 1], [530, '龍頭地鼠', 'steel', 31]],
+            [[532, '搬運小匠', 'fighting', 1], [533, '鐵骨土人', 'fighting', 25], [534, '修建老匠', 'fighting', 40, '*']],
+            [[535, '圓蝌蚪', 'water', 1], [536, '藍蟾蜍', 'water', 25], [537, '蟾蜍王', 'water', 36]],
+            [[551, '黑眼鱷', 'ground', 1], [552, '混混鱷', 'ground', 29], [553, '流氓鱷', 'ground', 40]],
+            [[610, '牙牙', 'dragon', 1], [611, '斧牙龍', 'dragon', 38], [612, '雙斧戰龍', 'dragon', 48]],
+            [[622, '泥偶小人', 'ground', 1], [623, '泥偶巨人', 'ground', 43]],
+            [[704, '黏黏寶', 'dragon', 1], [705, '黏美兒', 'dragon', 40], [706, '黏美龍', 'dragon', 50]],
+            [[749, '泥驢仔', 'ground', 1], [750, '重泥挽馬', 'ground', 30]],
+            [[759, '童偶熊', 'normal', 1], [760, '穿著熊', 'fighting', 27]],
+            [[909, '呆火鱷', 'fire', 1], [910, '炙燙鱷', 'fire', 16], [911, '骨紋巨聲鱷', 'ghost', 36]],
+            [[977, '吃吼霸', 'water', 1]]
+        ];
+        const MON = {}, LINE = {};
+        EVO_LINES.forEach(stages => {
+            const base = stages[0][0];
+            LINE[base] = stages.map(s => s[0]);
+            stages.forEach(([id, name, type, lvl, special]) => { MON[id] = { id, name, type, lvl, base, special: !!special, color: TYPE_COLORS[type] }; });
+        });
+        const BASES = EVO_LINES.map(s => s[0][0]);
+        /* EXP and team slots are tracked per evolution line (its base form id). Older saves that stored an evolved id still map correctly. */
+        const baseOf = id => (MON[id] ? MON[id].base : null);
+        const formAt = (base, lv) => LINE[base].reduce((cur, id) => (MON[id].lvl <= lv ? id : cur), base);
+        const nextEvo = (base, lv) => LINE[base].map(id => MON[id]).find(m => m.lvl > lv) || null;
+        const DEFAULT_TEAM = [258, 10253, 147, 443, 194];
+
+        function monImg(id, cls, animated = true) {
+            return `<img class="${cls}" src="${animated ? SPRITE_GIF(id) : SPRITE_PNG(id)}" alt="${MON[id] ? MON[id].name : ''}" data-id="${id}" ${animated ? '' : 'loading="lazy"'} onerror="spriteFallback(this)">`;
+        }
+        /* GIF fails -> static PNG -> poké ball placeholder. */
+        function spriteFallback(img) {
+            if (img.dataset.fb) {
+                const ball = document.createElement('span'); ball.className = 'mon-missing'; ball.textContent = '?';
+                img.replaceWith(ball); return;
+            }
+            img.dataset.fb = '1'; img.src = SPRITE_PNG(img.dataset.id);
+        }
+        /* Integer-ish pixel scaling so different-sized GIFs look consistent on the stage. */
+        function fitSprite(img, maxW, maxH) {
+            let k = Math.min(2.5, maxW / img.naturalWidth, maxH / img.naturalHeight);
+            if (k >= 1) k = Math.floor(k * 2) / 2;
+            img.style.width = Math.round(img.naturalWidth * k) + 'px';
+        }
+
+        /* JS Zoning: Default Program (machines & cables only) */
+        const PROGRAM_FORMAT = 'pixelgym-program-v1';
+        const ex = (name, sets, reps, rest, warmup, note) => ({ name, sets, reps, rest, warmup, note });
+
+        const DEFAULT_PROGRAM = {
+            format: PROGRAM_FORMAT,
+            name: '器械增肌｜上下推拉腿 五分化',
+            days: [
+                { id: 'Day1', title: 'DAY 1 — 上肢綜合（胸・背・肩・手）', exercises: [
+                    ex('坐姿胸推機', 3, '6-10', 150, 1, '離心 2–3 秒，底部不反彈，肩胛後收'),
+                    ex('胸托划船機', 3, '8-12', 120, 1, '胸貼墊，頂端停 1 秒'),
+                    ex('高位下拉機 寬握', 3, '8-12', 120, 0, '拉到上胸，手肘往後口袋帶'),
+                    ex('肩推機', 3, '8-12', 120, 0, '下放到耳朵高度，不鎖死'),
+                    ex('Cable 側平舉', 3, '12-15', 60, 0, '低位單手，拉到肩高、慢放'),
+                    ex('二頭彎舉機', 2, '10-15', 60, 0, '完全伸直再彎起'),
+                    ex('Cable 三頭下壓 Rope', 2, '10-15', 60, 0, '底部把繩子往外分開')
+                ]},
+                { id: 'Day2', title: 'DAY 2 — 下肢 A（股四頭主導）', exercises: [
+                    ex('腿推機', 4, '8-12', 150, 2, '腳放中位，膝蓋下到 90° 以下'),
+                    ex('腿屈伸機', 3, '10-15', 90, 0, '頂端停 1 秒，慢放'),
+                    ex('腿彎舉機', 3, '10-12', 90, 0, '坐姿，上身微前傾拉長後腿'),
+                    ex('髖內收機', 3, '12-15', 60, 0, '開到最大伸展再夾回'),
+                    ex('坐姿小腿推蹬機', 3, '10-15', 60, 0, '底部停 2 秒充分伸展'),
+                    ex('Cable Crunch', 3, '10-15', 60, 0, '用腹肌捲曲，不是用手拉')
+                ]},
+                { id: 'Day3', title: 'DAY 3 — 推（胸・肩・三頭）', exercises: [
+                    ex('上斜胸推機', 3, '6-10', 150, 1, '推向上胸，底部感受伸展'),
+                    ex('蝴蝶機夾胸', 3, '10-15', 90, 0, '手肘微彎固定，頂端停 1 秒'),
+                    ex('Cable 夾胸', 2, '12-15', 60, 0, '低往高夾，練上胸'),
+                    ex('Cable 側平舉', 4, '12-20', 60, 0, '最後一組可做遞減組'),
+                    ex('三頭伸展機', 3, '10-12', 75, 0, '上臂固定不晃'),
+                    ex('Cable 過頭三頭伸展', 2, '12-15', 60, 0, '背對滑輪，伸展長頭')
+                ]},
+                { id: 'Day4', title: 'DAY 4 — 拉（背・後束・二頭）', exercises: [
+                    ex('高位下拉機 反握窄距', 3, '8-12', 120, 1, '挺胸，拉到鎖骨下方'),
+                    ex('T Bar 划船機', 3, '8-10', 120, 0, '胸貼墊，背中段發力'),
+                    ex('坐姿划船機', 3, '10-12', 90, 0, '向前讓背完全伸展再拉回'),
+                    ex('Cable 直臂下壓', 2, '12-15', 60, 0, '手臂微彎，用背闊肌下壓'),
+                    ex('蝴蝶機反向', 3, '12-20', 60, 0, '後束：手往外推，不聳肩'),
+                    ex('Cable 二頭彎舉', 2, '10-15', 60, 0, '頂端擠壓 1 秒'),
+                    ex('Cable 錘式彎舉', 2, '10-15', 60, 0, '繩索把手，練肱橈肌')
+                ]},
+                { id: 'Day5', title: 'DAY 5 — 下肢 B（臀・腿後側）', exercises: [
+                    ex('哈克深蹲機', 3, '6-10', 150, 2, '沒有哈克可改史密斯深蹲（名稱也一起改）'),
+                    ex('臥式腿彎舉機', 4, '8-12', 90, 0, '髖部貼墊，不要翹屁股'),
+                    ex('臀推機', 3, '8-12', 120, 0, '頂端夾臀停 1 秒'),
+                    ex('腿屈伸機', 2, '12-15', 75, 0, '輕重量高品質'),
+                    ex('髖外展機', 3, '12-20', 60, 0, '上身前傾更練臀中肌'),
+                    ex('坐姿小腿推蹬機', 3, '10-15', 60, 0, '底部停 2 秒'),
+                    ex('腹部捲腹機', 3, '10-15', 60, 0, '吐氣捲到底')
+                ]}
+            ]
+        };
+
+        /* First-time weights only. After the first session every exercise uses last session's weights. */
+        const DEFAULT_WEIGHTS = {
+            '坐姿划船機': 75, '高位下拉機 寬握': 70, '胸托划船機': 65, 'Cable 直臂下壓': 25, '二頭彎舉機': 45, 'Cable 錘式彎舉': 10,
+            '坐姿胸推機': 75, '上斜胸推機': 65, '蝴蝶機夾胸': 55, 'Cable 夾胸': 12, '三頭伸展機': 45, 'Cable 三頭下壓 Rope': 22, 'Cable Crunch': 35,
+            '腿推機': 160, '腿屈伸機': 55, '腿彎舉機': 50, '髖外展機': 45, '坐姿小腿推蹬機': 70,
+            'T Bar 划船機': 65, '高位下拉機 反握窄距': 65, '坐姿後束機': 35, 'Cable 臉拉': 22, '肩推機': 55, '蝴蝶機反向': 30, 'Cable 側平舉': 6,
+            '髖內收機': 45, 'Cable 過頭三頭伸展': 15, 'Cable 二頭彎舉': 15, '哈克深蹲機': 60, '臥式腿彎舉機': 35, '臀推機': 60, '腹部捲腹機': 35
+        };
+
+        const TIPS = [
+            '全部正式組都做到次數上限，下次就加重 2.5–5kg！',
+            '每組留 1–2 下力氣（RIR 1–2），品質比硬撐重要。',
+            '離心慢放 2–3 秒，肌肉受力時間更長。',
+            '動作名稱保持一致，重量才會自動延續喔。',
+            '睡滿 7 小時以上，肌肉才長得快。',
+            '蛋白質每公斤體重 1.6–2.2g，分散在各餐。',
+            '器械座椅高度記下來，每次一樣才好比較進步。'
+        ];
+
+        /* JS Zoning: Storage Helpers */
+        const PROGRAM_KEY = 'pixelgym_program_v1';
+        const TEAM_KEY = 'pixelgym_team_v1';
+        const MIGRATION_KEY = 'pixelgym_mig_mon_v1';
+        const REC_RE = /^workout_(\d{4}-\d{2}-\d{2})_(.+)$/;
+        const LS = {
+            get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+            set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('儲存失敗，瀏覽器空間可能不足'); } },
+            del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+        };
+        const clone = o => JSON.parse(JSON.stringify(o));
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const hasReps = s => String(s.reps ?? '').trim() !== '';
+        const num = v => parseFloat(v) || 0;
+        const clampInt = (v, min, max, def) => { const n = parseInt(v, 10); return isNaN(n) ? def : Math.min(max, Math.max(min, n)); };
+
+        /* Local date, not UTC: toISOString() gives yesterday before 08:00 in Taiwan. */
+        function localDateStr(d = new Date()) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function listRecords() {
+            const out = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const m = key && key.match(REC_RE);
+                if (!m || /_(startTime|meta)$/.test(key)) continue;
+                const data = LS.get(key, null);
+                if (!Array.isArray(data)) continue;
+                out.push({ key, date: m[1], dayId: m[2], data, trained: data.some(e => (e.sets || []).some(hasReps)) });
+            }
+            return out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+        }
+
+        function normalizeProgram(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            let days = raw.days;
+            if (!Array.isArray(days)) {
+                const entries = Object.entries(raw);
+                if (!entries.length || !entries.every(([, v]) => Array.isArray(v))) return null;
+                days = entries.map(([id, list]) => ({ id, title: id, exercises: list }));
+            }
+            const usedIds = new Set();
+            const out = days.filter(d => d && typeof d === 'object').map((d, i) => {
+                let id = String(d.id || `Day${i + 1}`).trim().replace(/\s+/g, '_') || `Day${i + 1}`;
+                while (usedIds.has(id)) id += 'b';
+                usedIds.add(id);
+                const exercises = (Array.isArray(d.exercises) ? d.exercises : [])
+                    .map(e => (typeof e === 'string' ? { name: e } : e))
+                    .filter(e => e && String(e.name ?? '').trim())
+                    .map(e => ({
+                        name: String(e.name).trim(),
+                        sets: clampInt(e.sets, 1, 10, 3),
+                        reps: String(e.reps ?? '8-12').trim() || '8-12',
+                        rest: clampInt(e.rest, 15, 600, 90),
+                        warmup: clampInt(e.warmup, 0, 3, 0),
+                        note: String(e.note ?? '').trim()
+                    }));
+                return { id, title: String(d.title || `DAY ${i + 1}`).trim(), exercises };
+            });
+            if (!out.length) return null;
+            return { format: PROGRAM_FORMAT, name: String(raw.name || '我的課表').trim(), days: out };
+        }
+
+        /* JS Zoning: State */
+        let program = normalizeProgram(LS.get(PROGRAM_KEY, null)) || clone(DEFAULT_PROGRAM);
+        let team = LS.get(TEAM_KEY, {}) || {};
+        const state = {
+            date: localDateStr(),
+            dayId: null,
+            data: [],
+            saved: false,
+            records: [],
+            lastPerf: {},
+            editing: false,
+            draft: null,
+            milestones: new Set(),
+            baseExp: {},
+            shownLv: 0,
+            shownForm: 0,
+            evolving: false,
+            taps: 0,
+            rest: null
+        };
+        let saveTimer = null, tickTimer = null, restTimer = null, typeTimer = null, toastTimer = null;
+
+        /* JS Zoning: DOM */
+        const $ = id => document.getElementById(id);
+        const dateInput = $('dateInput'), dayTabs = $('dayTabs'), workoutContainer = $('workoutContainer');
+        const dayIndexEl = $('dayIndex'), dayTitleEl = $('dayTitle'), editBtn = $('editBtn'), dayBar = $('dayBar');
+        const mascotEl = $('mascot'), monNameEl = $('monName'), monLvEl = $('monLv'), hpFill = $('hpFill'), stage = $('stage');
+        const dialogText = $('dialogText'), dock = $('dock'), bag = $('bag');
+        const expFill = $('expFill'), expText = $('expText'), durationPill = $('durationPill'), quoteEl = $('quote');
+        const restBox = $('restBox'), restTimeEl = $('restTime');
+
+        /* JS Zoning: Day / Program Helpers */
+        const getDay = () => program.days.find(d => d.id === state.dayId) || program.days[0];
+        const dayIndexOf = id => Math.max(0, program.days.findIndex(d => d.id === id));
+        /* Team: which Pokémon trains on which day. Each session also stores its Pokémon in the _meta key. */
+        /* Returns the evolution line (base id) for a day. */
+        function monIdFor(dayId) {
+            if (baseOf(team[dayId])) return baseOf(team[dayId]);
+            let idx = program.days.findIndex(d => d.id === dayId);
+            if (idx < 0) { const m = String(dayId).match(/(\d+)/); idx = m ? parseInt(m[1], 10) - 1 : 0; }
+            return DEFAULT_TEAM[Math.max(0, idx) % DEFAULT_TEAM.length];
+        }
+        /* Current evolved form of a line, given its level. */
+        const formOf = base => MON[formAt(base, levelOfMon(base))];
+        function currentMonId() {
+            const meta = LS.get(metaKey(), null);
+            return meta && baseOf(meta.mon) ? baseOf(meta.mon) : monIdFor(state.dayId);
+        }
+        const recKey = () => `workout_${state.date}_${state.dayId}`;
+        const metaKey = () => `${recKey()}_meta`;
+
+        const WEEKDAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+        /* Monday = 0 ... Sunday = 6 (parsed as local date). */
+        function weekdayIndex(date) {
+            const [y, m, d] = date.split('-').map(Number);
+            return (new Date(y, m - 1, d).getDay() + 6) % 7;
+        }
+        /* Weekday decides the day (Mon→D1 … Fri→D5). Days beyond the program length (e.g. weekend) fall back to rotation. */
+        function suggestedDayFor(date) {
+            const ids = program.days.map(d => d.id);
+            const wd = weekdayIndex(date);
+            if (wd < ids.length) return ids[wd];
+            const prev = state.records.find(r => r.trained && r.date < date && ids.includes(r.dayId));
+            if (!prev) return ids[0];
+            return ids[(ids.indexOf(prev.dayId) + 1) % ids.length];
+        }
+
+        function pickDayFor(date) {
+            const ids = program.days.map(d => d.id);
+            const same = state.records.find(r => r.trained && r.date === date && ids.includes(r.dayId));
+            return same ? same.dayId : suggestedDayFor(date);
+        }
+
+        function findLastPerformance(name) {
+            const key = recKey();
+            for (const r of state.records) {
+                if (r.key === key || r.date > state.date) continue;
+                const found = r.data.find(e => e.exerciseName === name);
+                if (found && (found.sets || []).some(hasReps)) return { date: r.date, sets: found.sets };
+            }
+            return null;
+        }
+
+        function roundTo(w, step = 2.5) { return Math.round(w / step) * step; }
+
+        /* Bug fix: default weights come from the last session of the same exercise, not a fixed table. */
+        function buildSets(cfg, last) {
+            const lastFormal = last ? last.sets.filter(s => !s.isWarmup && hasReps(s)) : [];
+            const lastWarm = last ? last.sets.filter(s => s.isWarmup && String(s.weight ?? '').trim() !== '') : [];
+            const fallback = DEFAULT_WEIGHTS[cfg.name] != null ? String(DEFAULT_WEIGHTS[cfg.name]) : '';
+            const formalW = i => (lastFormal.length ? String(lastFormal[Math.min(i, lastFormal.length - 1)].weight ?? '') : fallback);
+            const ramps = { 1: [0.5], 2: [0.4, 0.65], 3: [0.4, 0.6, 0.8] }[cfg.warmup] || [];
+            const sets = [];
+            ramps.forEach((f, i) => {
+                const top = num(formalW(0));
+                const w = lastWarm[i] ? String(lastWarm[i].weight) : (top ? String(roundTo(top * f)) : '');
+                sets.push({ isWarmup: true, weight: w, reps: '' });
+            });
+            for (let i = 0; i < cfg.sets; i++) sets.push({ isWarmup: false, weight: formalW(i), reps: '' });
+            return sets;
+        }
+
+        function repTop(reps) { const m = String(reps).match(/(\d+)\s*$/); return m ? parseInt(m[1], 10) : null; }
+
+        /* JS Zoning: Load Day */
+        function loadDay() {
+            state.records = listRecords();
+            const day = getDay();
+            state.dayId = day.id;
+            state.lastPerf = {};
+            const saved = LS.get(recKey(), null);
+            if (Array.isArray(saved)) {
+                state.data = saved.map(e => ({ exerciseName: String(e.exerciseName ?? ''), sets: (e.sets || []).map(s => ({ isWarmup: !!s.isWarmup, weight: String(s.weight ?? ''), reps: String(s.reps ?? '') })) }));
+                state.saved = true;
+            } else {
+                state.data = day.exercises.map(cfg => ({ exerciseName: cfg.name, sets: buildSets(cfg, findLastPerformance(cfg.name)) }));
+                state.saved = false;
+            }
+            state.data.forEach(e => { state.lastPerf[e.exerciseName] = findLastPerformance(e.exerciseName); });
+            state.milestones = new Set();
+            state.baseExp = computeBaseExp();
+            state.shownLv = 0;
+            state.shownForm = 0;
+        }
+
+        /* EXP from every other session; the session on screen is added live. */
+        function computeBaseExp() {
+            const exp = {}, key = recKey();
+            state.records.forEach(r => {
+                if (r.key === key || !r.trained) return;
+                const meta = LS.get(`${r.key}_meta`, null);
+                const id = meta && baseOf(meta.mon) ? baseOf(meta.mon) : monIdFor(r.dayId);
+                exp[id] = (exp[id] || 0) + sessionRatio(r.data);
+            });
+            return exp;
+        }
+        function sessionRatio(data) {
+            let d = 0, t = 0;
+            data.forEach(e => (e.sets || []).forEach(s => { t++; if (hasReps(s)) d++; }));
+            return t ? d / t : 0;
+        }
+        const levelOf = exp => Math.min(100, 1 + Math.floor(exp + 1e-9));
+        const levelOfMon = id => levelOf((state.baseExp[id] || 0) + (id === currentMonId() ? sessionRatio(state.data) : 0));
+
+        function save() {
+            clearTimeout(saveTimer);
+            if (state.editing) return;
+            LS.set(recKey(), state.data);
+            state.saved = true;
+            const { done, total } = countSets();
+            const meta = LS.get(metaKey(), null) || {};
+            const legacyStart = LS.get(`${recKey()}_startTime`, null);
+            if (done > 0) {
+                meta.mon = currentMonId();
+                meta.start = meta.start || (legacyStart ? parseInt(legacyStart, 10) : Date.now());
+                meta.last = Date.now();
+                if (done === total) meta.end = meta.end || Date.now(); else delete meta.end;
+                LS.set(metaKey(), meta);
+            } else {
+                LS.del(metaKey()); LS.del(`${recKey()}_startTime`);
+            }
+            updateDuration();
+        }
+        const debounceSave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); };
+
+        /* JS Zoning: Rendering */
+        function renderAll() {
+            loadDay();
+            renderTabs();
+            renderHero();
+            renderDayBar();
+            if (state.editing) renderEditor(); else renderWorkout();
+            updateProgress(true);
+            updateDuration();
+        }
+
+        function renderTabs() {
+            const suggested = suggestedDayFor(state.date);
+            const trainedToday = new Set(state.records.filter(r => r.trained && r.date === state.date).map(r => r.dayId));
+            const wdLabels = {};
+            program.days.forEach((d, i) => { if (i < 7) wdLabels[d.id] = WEEKDAYS[i].slice(1); });
+            dayTabs.innerHTML = program.days.map((d, i) => {
+                const mon = formOf(d.id === state.dayId ? currentMonId() : monIdFor(d.id));
+                return `
+                <button class="day-chip ${d.id === state.dayId ? 'active' : ''}" data-day="${esc(d.id)}" style="--chip:${mon.color}">
+                    ${trainedToday.has(d.id) ? '<i class="done-dot"></i>' : ''}
+                    ${d.id === suggested && !trainedToday.size ? '<span class="next-tag">今天</span>' : ''}
+                    ${monImg(mon.id, 'mon-chip')}
+                    <b>D${i + 1}${wdLabels[d.id] ? `<small>${wdLabels[d.id]}</small>` : ''}</b>
+                </button>`;
+            }).join('');
+        }
+
+        function setHeroSprite(id) {
+            const mon = MON[id];
+            document.documentElement.style.setProperty('--acc', mon.color);
+            mascotEl.innerHTML = monImg(id, 'mon-hero');
+            monNameEl.textContent = mon.name;
+            const img = mascotEl.querySelector('img');
+            if (!img) return;
+            const fit = () => fitSprite(img, 150, 104);
+            if (img.complete && img.naturalWidth) fit(); else img.addEventListener('load', fit);
+        }
+
+        function renderHero() {
+            const mon = formOf(currentMonId());
+            setHeroSprite(mon.id);
+            const h = new Date().getHours();
+            stage.classList.toggle('night', h >= 19 || h < 6);
+            const wd = weekdayIndex(state.date);
+            const task = getDay().title.replace(/^DAY\s*\d+\s*—\s*/, '');
+            say(wd >= program.days.length && !state.saved
+                ? `${WEEKDAYS[wd]}是休息日～想補練的話，${mon.name}幫你排了「${task}」。`
+                : `去吧！${mon.name}！${WEEKDAYS[wd]}的任務是「${task}」。`);
+        }
+
+        function renderDayBar() {
+            const idx = dayIndexOf(state.dayId);
+            const wd = weekdayIndex(state.date);
+            const tag = state.dayId === suggestedDayFor(state.date) ? (wd < program.days.length ? ` · ${WEEKDAYS[wd]}課表` : ' · 週末補課建議') : '';
+            dayIndexEl.textContent = `DAY ${idx + 1} / ${program.days.length}${tag}`;
+            dayTitleEl.textContent = getDay().title;
+            editBtn.classList.toggle('hidden', state.editing);
+            dock.classList.toggle('hidden', state.editing);
+        }
+
+        function fmtRest(sec) { return sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`; }
+        function fmtSets(sets) { return sets.filter(s => !s.isWarmup && hasReps(s)).map(s => `${s.weight || 0}×${s.reps}`).join('・'); }
+
+        function renderWorkout() {
+            const cfgMap = Object.fromEntries(getDay().exercises.map(c => [c.name, c]));
+            workoutContainer.innerHTML = state.data.map((exData, i) => {
+                const cfg = cfgMap[exData.exerciseName];
+                const last = state.lastPerf[exData.exerciseName];
+                let formalNo = 0;
+                const rows = exData.sets.map((s, si) => `
+                    <div class="set-row ${s.isWarmup ? 'warm' : ''} ${hasReps(s) ? 'done' : ''}" data-set="${si}">
+                        <span class="set-tag">${s.isWarmup ? '熱' : ++formalNo}</span>
+                        <label class="field"><input class="in-w" type="number" inputmode="decimal" step="0.5" value="${esc(s.weight)}" placeholder="—"><em>kg</em></label>
+                        <span class="x">×</span>
+                        <label class="field"><input class="in-r" type="number" inputmode="numeric" value="${esc(s.reps)}" placeholder="${esc(s.isWarmup ? '8' : (cfg ? cfg.reps : '次'))}"><em>下</em></label>
+                        <button class="del" data-action="del-set" aria-label="刪除這組">✕</button>
+                    </div>`).join('');
+
+                let upHint = '';
+                if (cfg && last) {
+                    const top = repTop(cfg.reps);
+                    const lf = last.sets.filter(s => !s.isWarmup && hasReps(s));
+                    if (top && lf.length >= cfg.sets && lf.every(s => parseInt(s.reps, 10) >= top)) upHint = `<span class="ex-up">▲ 上次全組達 ${top} 下，今天加重 2.5–5kg！</span>`;
+                }
+                return `
+                    <section class="px-box ex-card ${isClear(exData) ? 'clear' : ''}" data-ex="${i}" style="--d:${i}">
+                        <span class="stamp">CLEAR!</span>
+                        <div class="ex-head">
+                            <span class="ex-no">${i + 1}</span>
+                            <h3 class="ex-name">${esc(exData.exerciseName)}</h3>
+                            <span class="ex-count">${exData.sets.filter(hasReps).length}/${exData.sets.length}</span>
+                        </div>
+                        ${cfg ? `<div class="ex-meta"><span class="tag acc">${cfg.sets} 組 × ${esc(cfg.reps)} 下</span><span class="tag">休息 ${fmtRest(cfg.rest)}</span>${cfg.warmup ? `<span class="tag">熱身 ${cfg.warmup}</span>` : ''}</div>` : ''}
+                        ${cfg && cfg.note ? `<p class="ex-note">▸ ${esc(cfg.note)}</p>` : ''}
+                        ${last ? `<p class="ex-last">上次 ${last.date.slice(5).replace('-', '/')}：${esc(fmtSets(last.sets)) || '—'}</p>` : '<p class="ex-last">首次挑戰！重量用預設值</p>'}
+                        ${upHint}
+                        <div class="sets">${rows}</div>
+                        <button class="btn ghost small block add-set" data-action="add-set">＋ 加一組</button>
+                    </section>`;
+            }).join('') || '<div class="px-box">這天還沒有動作，按右上「編輯」新增吧！</div>';
+        }
+
+        const isClear = exData => exData.sets.length > 0 && exData.sets.every(hasReps);
+
+        function countSets() {
+            let done = 0, total = 0;
+            state.data.forEach(e => e.sets.forEach(s => { total++; if (hasReps(s)) done++; }));
+            return { done, total };
+        }
+
+        function updateProgress(silent) {
+            const { done, total } = countSets();
+            const pct = total ? Math.round(done / total * 100) : 0;
+            expFill.style.width = `calc(${pct}% - ${pct ? 4 : 0}px)`;
+            expText.textContent = `${done}/${total} · ${pct}%`;
+            const mon = monNameEl.textContent;
+            const lines = [
+                [100, `今天的訓練完美達成！${mon}獲得了滿滿的經驗值！`, '訓練達成！辛苦了！'],
+                [80, `最後幾組了！${mon}使出了全力！`, '最後衝刺，守住動作品質'],
+                [50, `效果絕佳！${mon}的肌肉正在膨脹中…`, '過半了，保持節奏'],
+                [1, `${mon}熱身完畢，開始戰鬥！`, '']
+            ];
+            const hit = lines.find(([th]) => pct >= th);
+            quoteEl.textContent = hit ? hit[2] : '';
+            if (!silent && hit && !state.milestones.has(hit[0])) {
+                say(hit[1]);
+                if (hit[0] === 100) jumpMascot();
+            }
+            if (hit) lines.forEach(([th]) => { if (pct >= th) state.milestones.add(th); });
+            else state.milestones.clear();
+            updateLevel(silent, total ? done / total : 0);
+        }
+
+        /* JS Zoning: Pokémon Level (1 full workout = 1 level; partial = proportional EXP) */
+        function updateLevel(silent, ratio) {
+            const base = currentMonId();
+            const exp = (state.baseExp[base] || 0) + ratio;
+            const lv = levelOf(exp);
+            const frac = lv >= 100 ? 1 : exp - Math.floor(exp + 1e-9);
+            const form = formAt(base, lv);
+            monLvEl.textContent = lv;
+            hpFill.style.width = `${Math.round(frac * 100)}%`;
+            $('monExp').textContent = lv >= 100 ? 'MAX' : `${Math.round(frac * 100)}%`;
+            const prevLv = state.shownLv, prevForm = state.shownForm;
+            state.shownLv = lv; state.shownForm = form;
+            if (state.evolving) return;
+            if (!silent && prevLv && lv > prevLv) {
+                if (prevForm && form !== prevForm) evolve(prevForm, form, lv);
+                else levelUp(MON[form].name, lv);
+            } else if (prevForm && form !== prevForm) {
+                setHeroSprite(form); renderTabs();
+            }
+        }
+
+        /* Game-style evolution: white silhouette flicker, then the new form appears. */
+        function evolve(fromId, toId, lv) {
+            const a = MON[fromId], b = MON[toId];
+            state.evolving = true;
+            say(`咦？${a.name}的樣子……！`);
+            mascotEl.classList.remove('levelup');
+            mascotEl.classList.add('evolving'); stage.classList.add('evo-bg');
+            if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100, 100, 100, 400]);
+            setTimeout(() => {
+                state.evolving = false;
+                mascotEl.classList.remove('evolving'); stage.classList.remove('evo-bg');
+                const now = state.shownForm;
+                setHeroSprite(now);
+                renderTabs();
+                if (now !== toId) return;
+                void mascotEl.offsetWidth; mascotEl.classList.add('levelup');
+                say(`恭喜！${a.name}進化成了${b.name}！（Lv.${lv}）`);
+                toast(`${a.name} 進化成 ${b.name}！`);
+            }, 2800);
+        }
+
+        function levelUp(name, lv) {
+            say(`恭喜！${name}升到了 Lv.${lv}！`);
+            toast(`${name} 升級了！Lv.${lv}`);
+            mascotEl.classList.remove('levelup'); stage.classList.remove('flash');
+            void mascotEl.offsetWidth;
+            mascotEl.classList.add('levelup'); stage.classList.add('flash');
+            setTimeout(() => stage.classList.remove('flash'), 1400);
+            if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 200]);
+        }
+
+        function updateDuration() {
+            clearInterval(tickTimer);
+            const meta = LS.get(metaKey(), null);
+            const legacyStart = LS.get(`${recKey()}_startTime`, null);
+            const start = meta && meta.start ? meta.start : (legacyStart ? parseInt(legacyStart, 10) : null);
+            const show = () => {
+                if (!start) { durationPill.textContent = 'TIME 00:00'; return; }
+                const live = state.date === localDateStr() && (!meta || !meta.end) && (!meta || !meta.last || Date.now() - meta.last < 3 * 3600e3);
+                const end = live ? Date.now() : meta && (meta.end || meta.last);
+                durationPill.textContent = end ? `TIME ${fmtDuration(end - start)}` : 'TIME --:--';
+            };
+            show();
+            if (start) tickTimer = setInterval(show, 1000);
+        }
+
+        function fmtDuration(ms) {
+            const t = Math.max(0, Math.floor(ms / 1000));
+            const h = Math.floor(t / 3600), m = String(Math.floor(t % 3600 / 60)).padStart(2, '0'), s = String(t % 60).padStart(2, '0');
+            return h ? `${h}:${m}:${s}` : `${m}:${s}`;
+        }
+
+        /* JS Zoning: Mascot Dialog & Effects */
+        function say(text) {
+            clearInterval(typeTimer);
+            let i = 0; dialogText.textContent = '';
+            typeTimer = setInterval(() => {
+                dialogText.textContent = text.slice(0, ++i);
+                if (i >= text.length) clearInterval(typeTimer);
+            }, 28);
+        }
+        function jumpMascot() {
+            mascotEl.classList.remove('jump'); void mascotEl.offsetWidth; mascotEl.classList.add('jump');
+        }
+        function toast(msg) {
+            const el = $('toast'); el.textContent = msg; el.classList.add('show');
+            clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+        }
+        function expPop(row) {
+            const p = document.createElement('span'); p.className = 'exp-pop'; p.textContent = '+EXP';
+            row.appendChild(p); setTimeout(() => p.remove(), 950);
+            row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+        }
+
+        /* JS Zoning: Rest Timer */
+        function startRest(seconds) {
+            state.rest = { end: Date.now() + seconds * 1000 };
+            restBox.classList.remove('hidden', 'go'); quoteEl.classList.add('hidden');
+            clearInterval(restTimer);
+            const tick = () => {
+                if (!state.rest) return;
+                const left = Math.ceil((state.rest.end - Date.now()) / 1000);
+                if (left > 0) { restTimeEl.textContent = fmtRest(left); return; }
+                clearInterval(restTimer);
+                restTimeEl.textContent = 'GO!'; restBox.classList.add('go');
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                say(`休息結束！${monNameEl.textContent}已經準備好下一組了！`);
+                jumpMascot();
+                state.rest = null;
+                setTimeout(() => { if (!state.rest) stopRest(); }, 4000);
+            };
+            tick(); restTimer = setInterval(tick, 250);
+        }
+        function stopRest() {
+            clearInterval(restTimer); state.rest = null;
+            restBox.classList.add('hidden'); restBox.classList.remove('go'); quoteEl.classList.remove('hidden');
+        }
+
+        /* JS Zoning: Workout Events */
+        function onWorkoutInput(e) {
+            if (state.editing) return onEditorInput(e);
+            const t = e.target;
+            if (!t.classList.contains('in-w') && !t.classList.contains('in-r')) return;
+            const card = t.closest('.ex-card'), row = t.closest('.set-row');
+            const exData = state.data[+card.dataset.ex], si = +row.dataset.set, set = exData.sets[si];
+            if (t.classList.contains('in-w')) {
+                const old = set.weight;
+                set.weight = t.value;
+                /* Changing a formal set's weight carries over to the following unfinished sets that still had the same weight. */
+                if (!set.isWarmup) {
+                    for (let j = si + 1; j < exData.sets.length; j++) {
+                        const n = exData.sets[j];
+                        if (n.isWarmup || hasReps(n) || n.weight !== old) continue;
+                        n.weight = t.value;
+                        const input = card.querySelector(`.set-row[data-set="${j}"] .in-w`);
+                        if (input) input.value = t.value;
+                    }
+                }
+            } else {
+                set.reps = t.value;
+                row.classList.toggle('done', hasReps(set));
+            }
+            card.querySelector('.ex-count').textContent = `${exData.sets.filter(hasReps).length}/${exData.sets.length}`;
+            card.classList.toggle('clear', isClear(exData));
+            updateProgress();
+            debounceSave();
+        }
+
+        function onWorkoutChange(e) {
+            if (state.editing || !e.target.classList.contains('in-r') || !e.target.value.trim()) return;
+            const card = e.target.closest('.ex-card'), row = e.target.closest('.set-row');
+            expPop(row);
+            const exData = state.data[+card.dataset.ex];
+            const cfg = getDay().exercises.find(c => c.name === exData.exerciseName);
+            const { done, total } = countSets();
+            if (done < total) startRest(exData.sets[+row.dataset.set].isWarmup ? 45 : (cfg ? cfg.rest : 90));
+            save();
+        }
+
+        function onWorkoutClick(e) {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            if (state.editing) return onEditorClick(btn);
+            const card = btn.closest('.ex-card');
+            const exData = state.data[+card.dataset.ex];
+            if (btn.dataset.action === 'del-set') {
+                exData.sets.splice(+btn.closest('.set-row').dataset.set, 1);
+            } else if (btn.dataset.action === 'add-set') {
+                const prev = [...exData.sets].reverse().find(s => !s.isWarmup) || exData.sets[exData.sets.length - 1];
+                exData.sets.push({ isWarmup: false, weight: prev ? prev.weight : String(DEFAULT_WEIGHTS[exData.exerciseName] ?? ''), reps: '' });
+            }
+            save(); renderWorkout(); updateProgress(true);
+            const again = workoutContainer.querySelector(`.ex-card[data-ex="${card.dataset.ex}"]`);
+            if (again) again.style.animation = 'none';
+        }
+
+        /* JS Zoning: Program Editor */
+        function openEditor() {
+            state.editing = true;
+            state.draft = { title: getDay().title, items: getDay().exercises.map(c => ({ ...c, origName: c.name })) };
+            stopRest();
+            renderDayBar(); renderEditor();
+            window.scrollTo({ top: dayBar.offsetTop - 10, behavior: 'smooth' });
+        }
+
+        function renderEditor() {
+            const d = state.draft;
+            workoutContainer.innerHTML = `
+                <div class="px-box"><span class="lbl">這天的名稱</span><input id="edTitle" data-f="title" value="${esc(d.title)}" style="margin-top:6px"></div>
+                ${d.items.map((it, i) => `
+                    <section class="px-box ed-card" data-i="${i}">
+                        <div class="ed-top">
+                            <span class="ex-no">${i + 1}</span>
+                            <input class="ed-name" data-f="name" value="${esc(it.name)}" placeholder="器械動作名稱">
+                            <div class="ed-move">
+                                <button data-action="ed-up" aria-label="上移">▲</button>
+                                <button data-action="ed-down" aria-label="下移">▼</button>
+                                <button class="del" data-action="ed-del" aria-label="刪除">✕</button>
+                            </div>
+                        </div>
+                        <div class="ed-grid">
+                            <label>正式組<input type="number" inputmode="numeric" data-f="sets" value="${it.sets}"></label>
+                            <label>次數<input type="text" data-f="reps" value="${esc(it.reps)}"></label>
+                            <label>休息秒<input type="number" inputmode="numeric" data-f="rest" value="${it.rest}"></label>
+                            <label>熱身組<input type="number" inputmode="numeric" data-f="warmup" value="${it.warmup}"></label>
+                        </div>
+                        <input class="ed-note" data-f="note" value="${esc(it.note)}" placeholder="動作提示（可空白）">
+                    </section>`).join('')}
+                <div class="px-box"><div class="add-row"><input id="edNew" placeholder="新增器械動作，例：Cable 側平舉"><button class="btn small" data-action="ed-add">新增</button></div></div>
+                <div class="ed-actions">
+                    <button class="btn ghost" data-action="ed-cancel">取消</button>
+                    <button class="btn" data-action="ed-save">儲存這天</button>
+                </div>`;
+        }
+
+        function onEditorInput(e) {
+            const f = e.target.dataset.f; if (!f) return;
+            if (f === 'title') { state.draft.title = e.target.value; return; }
+            const card = e.target.closest('.ed-card'); if (!card) return;
+            state.draft.items[+card.dataset.i][f] = e.target.value;
+        }
+
+        function onEditorClick(btn) {
+            const a = btn.dataset.action, items = state.draft.items;
+            const card = btn.closest('.ed-card'), i = card ? +card.dataset.i : -1;
+            if (a === 'ed-up' && i > 0) [items[i - 1], items[i]] = [items[i], items[i - 1]];
+            else if (a === 'ed-down' && i < items.length - 1) [items[i + 1], items[i]] = [items[i], items[i + 1]];
+            else if (a === 'ed-del') items.splice(i, 1);
+            else if (a === 'ed-add') {
+                const name = $('edNew').value.trim(); if (!name) return;
+                items.push({ name, sets: 3, reps: '10-12', rest: 90, warmup: 0, note: '', origName: null });
+            } else if (a === 'ed-cancel') return closeEditor(false);
+            else if (a === 'ed-save') return closeEditor(true);
+            else return;
+            renderEditor();
+        }
+
+        function closeEditor(commit) {
+            if (commit) {
+                const d = state.draft, idx = dayIndexOf(state.dayId);
+                const normalized = normalizeProgram({ days: [{ id: state.dayId, title: d.title || getDay().title, exercises: d.items }] }).days[0];
+                const renames = {};
+                d.items.forEach(it => { if (it.origName && it.name.trim() && it.origName !== it.name.trim()) renames[it.origName] = it.name.trim(); });
+                program.days[idx] = normalized;
+                LS.set(PROGRAM_KEY, program);
+                if (state.saved) {
+                    state.data.forEach(e => { if (renames[e.exerciseName]) e.exerciseName = renames[e.exerciseName]; });
+                    const old = state.data;
+                    state.data = normalized.exercises.map(cfg => old.find(e => e.exerciseName === cfg.name) || { exerciseName: cfg.name, sets: buildSets(cfg, findLastPerformance(cfg.name)) });
+                    state.editing = false;
+                    save();
+                }
+                toast('課表已儲存！');
+            }
+            state.editing = false; state.draft = null;
+            renderAll();
+        }
+
+        /* JS Zoning: Summary & Chart */
+        const volumeOf = sets => (sets || []).reduce((a, s) => a + (hasReps(s) ? num(s.weight) * (parseInt(s.reps, 10) || 0) : 0), 0);
+
+        function buildSummaryText() {
+            const lines = [`${state.date}｜${getDay().title}`, durationPill.textContent.replace('TIME', '訓練時間'), ''];
+            let total = 0;
+            state.data.forEach(e => {
+                const done = e.sets.filter(hasReps);
+                if (!done.length) return;
+                lines.push(e.exerciseName);
+                done.forEach(s => lines.push(`${s.isWarmup ? '(熱) ' : ''}${s.weight || 0}kg x ${s.reps}`));
+                lines.push('');
+                total += volumeOf(e.sets);
+            });
+            if (lines.length <= 3) return '目前還沒有輸入次數的紀錄。';
+            lines.push(`總容量 ${Math.round(total).toLocaleString()} kg`);
+            return lines.join('\n');
+        }
+
+        function openSummary() {
+            const items = state.data.map(e => ({ name: e.exerciseName, vol: volumeOf(e.sets), last: volumeOf(state.lastPerf[e.exerciseName]?.sets) })).filter(it => it.vol > 0 || it.last > 0);
+            const max = Math.max(1, ...items.map(it => Math.max(it.vol, it.last)));
+            $('bars').innerHTML = items.map(it => {
+                const diff = it.last ? Math.round(it.vol - it.last) : null;
+                return `<div class="bar-row"><span class="bar-name">${esc(it.name)}</span>
+                    <div class="bar-track"><div class="bar-fill" style="--w:${it.vol / max * 100}%"></div>
+                    ${it.last ? `<i class="bar-last" style="left:calc(${it.last / max * 100}% - 2px)"></i>` : ''}
+                    <span class="bar-val">${Math.round(it.vol)}${diff != null && it.vol ? ` (${diff >= 0 ? '+' : ''}${diff})` : ''}</span></div></div>`;
+            }).join('') || '<p class="ex-note">還沒有資料，先完成一組吧！</p>';
+            $('summaryText').textContent = buildSummaryText();
+            openModal('summaryModal');
+        }
+
+        /* JS Zoning: Modal & Clipboard */
+        function openModal(id) { $(id).classList.add('active'); }
+        function closeModals() { document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active')); }
+
+        async function copyText(text) {
+            try { await navigator.clipboard.writeText(text); return true; } catch (e) {
+                const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+                ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta);
+                ta.select(); ta.setSelectionRange(0, text.length);
+                let ok = false; try { ok = document.execCommand('copy'); } catch (err) {}
+                ta.remove(); return ok;
+            }
+        }
+        function downloadFile(name, text, type) {
+            const url = URL.createObjectURL(new Blob([text], { type }));
+            const a = document.createElement('a'); a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        /* JS Zoning: Program Export / Import */
+        function buildProgramExport() {
+            return `【PIXEL GYM｜課表匯出】
+課表名稱：${program.name}
+匯出日期：${localDateStr()}
+
+-----BEGIN PROGRAM-----
+${JSON.stringify(program, null, 2)}
+-----END PROGRAM-----
+
+
+==================== 匯入格式說明 ====================
+這段是給你或 AI 看的。修改後把 BEGIN PROGRAM 到 END PROGRAM
+（含這兩行）貼回 App「道具包 → 匯入課表」即可；
+直接貼整份文字、或只貼 JSON 本體也都可以。
+
+【結構】（// 後面是說明，實際 JSON 裡不能有註解）
+{
+  "format": "${PROGRAM_FORMAT}", // 固定字串，不要改
+  "name": "課表名稱",
+  "days": [                          // 每個元素是一天，1–7 天皆可，順序 = 輪替順序
+    {
+      "id": "Day1",                  // 這天的代號，英數字、不可重複。
+                                     // 紀錄以「日期 + id」存檔，沿用舊 id 才找得到這天的舊紀錄
+      "title": "DAY 1 — 上肢",        // 顯示名稱
+      "exercises": [
+        {
+          "name": "坐姿胸推機",        // 動作名稱。預設重量 = 上次「同名」動作的重量，
+                                     // 同一個動作請保持完全相同的名稱
+          "sets": 3,                 // 正式組數 1–10
+          "reps": "8-12",            // 目標次數區間（字串）；全部正式組達到上限時 App 會提示加重
+          "rest": 120,               // 組間休息秒數 15–600（填完次數會自動開始倒數）
+          "warmup": 1,               // 熱身組數 0–3（重量自動抓正式組 40–80%）
+          "note": "離心 2–3 秒"        // 動作提示，可為空字串 ""
+        }
+      ]
+    }
+  ]
+}
+
+【規則】
+1. 只能用器械 / Cable / 史密斯等固定軌道動作；不要啞鈴、槓鈴等自由重量，也不要徒手動作。
+2. JSON 必須合法：一律雙引號、不能有註解、最後一個元素後面不要加逗號。
+3. 省略的欄位會自動補預設值：sets 3、reps "8-12"、rest 90、warmup 0、note ""。
+4. 匯入會覆蓋整份課表，但不會刪除任何訓練紀錄。
+5. 增肌原則：每個肌群每週約 10–20 組、每週練 2 次；每組留 1–2 下（RIR 1–2）。
+
+【給 AI 的指令範例】
+請依照上面的匯入格式修改這份課表：（寫你的需求，例如：腿加量、二頭多一點、每天控制在 60 分鐘內）。
+只能用器械動作，沒改到的動作名稱維持完全相同，
+最後只輸出 -----BEGIN PROGRAM----- 到 -----END PROGRAM----- 的完整內容。
+`;
+        }
+
+        function parseProgramText(text) {
+            let body = String(text || '').trim();
+            const b = body.indexOf('-----BEGIN PROGRAM-----');
+            if (b >= 0) {
+                const e = body.indexOf('-----END PROGRAM-----', b);
+                body = body.slice(b + 23, e > b ? e : undefined);
+            } else {
+                const fence = body.match(/```(?:json)?\s*([\s\S]*?)```/i);
+                if (fence) body = fence[1];
+            }
+            const s = body.indexOf('{'), e = body.lastIndexOf('}');
+            if (s < 0 || e < s) throw new Error('找不到課表 JSON');
+            body = body.slice(s, e + 1);
+            let raw;
+            try { raw = JSON.parse(body); } catch (err) {
+                const relaxed = body.replace(/^\s*\/\/.*$/gm, '').replace(/,\s*([}\]])/g, '$1');
+                raw = JSON.parse(relaxed);
+            }
+            const p = normalizeProgram(raw);
+            if (!p) throw new Error('格式不符：需要 days 陣列');
+            return p;
+        }
+
+        function importProgramFromText(text) {
+            let p;
+            try { p = parseProgramText(text); } catch (err) { toast('匯入失敗：' + err.message); return; }
+            const count = p.days.reduce((a, d) => a + d.exercises.length, 0);
+            if (!confirm(`匯入「${p.name}」：${p.days.length} 天、${count} 個動作。\n會覆蓋目前課表（訓練紀錄保留），確定？`)) return;
+            program = p;
+            LS.set(PROGRAM_KEY, program);
+            closeModals();
+            state.records = listRecords();
+            state.dayId = pickDayFor(state.date);
+            renderAll();
+            toast('課表匯入成功！');
+        }
+
+        /* JS Zoning: Full Backup */
+        function exportBackup() {
+            const data = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k.startsWith('workout_') || k === PROGRAM_KEY || k === TEAM_KEY) data[k] = LS.get(k, null);
+            }
+            downloadFile(`pixelgym_backup_${localDateStr()}.json`, JSON.stringify(data, null, 2), 'application/json');
+            toast('備份已下載');
+        }
+        function importBackup(file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const data = JSON.parse(reader.result);
+                    const keys = Object.keys(data).filter(k => k.startsWith('workout_') || k === PROGRAM_KEY || k === TEAM_KEY);
+                    if (!keys.length) throw new Error();
+                    keys.forEach(k => LS.set(k, data[k]));
+                    program = normalizeProgram(LS.get(PROGRAM_KEY, null)) || program;
+                    team = LS.get(TEAM_KEY, {}) || {};
+                    stampSessionMons();
+                    toast(`已匯入 ${keys.length} 筆資料`);
+                    state.records = listRecords(); state.dayId = pickDayFor(state.date); renderAll();
+                } catch (e) { toast('匯入失敗，請確認是完整備份 JSON'); }
+            };
+            reader.readAsText(file);
+        }
+
+        /* JS Zoning: Init */
+        function bindEvents() {
+            dateInput.addEventListener('change', () => {
+                if (!dateInput.value) return;
+                state.date = dateInput.value; state.editing = false; state.draft = null; stopRest();
+                state.records = listRecords(); state.dayId = pickDayFor(state.date); renderAll();
+            });
+            dayTabs.addEventListener('click', e => {
+                const chip = e.target.closest('.day-chip'); if (!chip || chip.dataset.day === state.dayId) return;
+                if (state.editing && !confirm('編輯尚未儲存，要放棄變更嗎？')) return;
+                state.editing = false; state.draft = null; stopRest();
+                state.dayId = chip.dataset.day; renderAll();
+            });
+            editBtn.addEventListener('click', openEditor);
+            workoutContainer.addEventListener('input', onWorkoutInput);
+            workoutContainer.addEventListener('change', onWorkoutChange);
+            workoutContainer.addEventListener('click', onWorkoutClick);
+            workoutContainer.addEventListener('keydown', e => {
+                if (e.key !== 'Enter' || !e.target.matches('.in-w, .in-r, #edNew')) return;
+                e.preventDefault();
+                if (e.target.id === 'edNew') { onEditorClick(workoutContainer.querySelector('[data-action="ed-add"]')); return; }
+                const inputs = [...workoutContainer.querySelectorAll('.in-w, .in-r')];
+                const next = inputs[inputs.indexOf(e.target) + 1];
+                if (next) next.focus(); else e.target.blur();
+            });
+
+            mascotEl.addEventListener('click', () => {
+                if (state.evolving) return;
+                jumpMascot();
+                say(state.taps++ % 2 === 0 ? evoInfo() : TIPS[Math.floor(Math.random() * TIPS.length)]);
+            });
+            $('swapBtn').addEventListener('click', openPicker);
+            $('pickerSearch').addEventListener('input', e => {
+                const q = e.target.value.trim();
+                $('monGrid').querySelectorAll('.mon-cell').forEach(c => c.classList.toggle('hidden', !!q && !c.dataset.name.includes(q)));
+            });
+            $('monGrid').addEventListener('click', e => {
+                const cell = e.target.closest('.mon-cell'); if (cell) pickMon(+cell.dataset.mon);
+            });
+            restBox.addEventListener('click', e => {
+                const b = e.target.closest('[data-rest]'); if (!b) return;
+                if (b.dataset.rest === 'skip') stopRest(); else if (state.rest) state.rest.end += 15000;
+            });
+
+            $('summaryBtn').addEventListener('click', openSummary);
+            const copySummary = async () => {
+                const text = buildSummaryText();
+                if (text.startsWith('目前還沒有')) return toast(text);
+                toast(await copyText(text) ? '已複製今日紀錄！' : '複製失敗，請到戰績總結手動選取');
+            };
+            $('copyBtn').addEventListener('click', copySummary);
+            $('modalCopyBtn').addEventListener('click', copySummary);
+
+            document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => {
+                if (e.target === m || e.target.closest('[data-close]')) closeModals();
+            }));
+
+            $('exportProgramBtn').addEventListener('click', () => { $('exportText').value = buildProgramExport(); openModal('exportModal'); });
+            $('copyProgramBtn').addEventListener('click', async () => {
+                const ok = await copyText($('exportText').value);
+                if (!ok) { $('exportText').select(); }
+                toast(ok ? '課表已複製，可以貼給 AI 了！' : '請長按文字框手動全選複製');
+            });
+            $('downloadProgramBtn').addEventListener('click', () => downloadFile(`pixelgym_program_${localDateStr()}.txt`, $('exportText').value, 'text/plain;charset=utf-8'));
+            $('importProgramBtn').addEventListener('click', () => { $('importText').value = ''; openModal('importModal'); });
+            $('confirmImportBtn').addEventListener('click', () => importProgramFromText($('importText').value));
+            $('pickProgramFileBtn').addEventListener('click', () => $('importProgramFile').click());
+            $('importProgramFile').addEventListener('change', e => {
+                const f = e.target.files[0]; if (!f) return;
+                const r = new FileReader(); r.onload = () => { $('importText').value = r.result; }; r.readAsText(f);
+                e.target.value = '';
+            });
+            $('resetProgramBtn').addEventListener('click', () => {
+                if (!confirm('還原成預設的器械增肌課表？（訓練紀錄保留）')) return;
+                program = clone(DEFAULT_PROGRAM); LS.set(PROGRAM_KEY, program);
+                state.dayId = pickDayFor(state.date); renderAll(); toast('已還原預設課表');
+            });
+            $('exportDataBtn').addEventListener('click', exportBackup);
+            $('importDataBtn').addEventListener('click', () => $('importDataFile').click());
+            $('importDataFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) importBackup(f); e.target.value = ''; });
+
+            document.addEventListener('visibilitychange', () => { if (!document.hidden && !state.editing) updateDuration(); });
+        }
+
+        /* JS Zoning: Pokémon Picker */
+        function openPicker() {
+            const cur = currentMonId();
+            const idx = dayIndexOf(state.dayId);
+            $('pickerTitle').textContent = `選擇 DAY ${idx + 1} 的訓練夥伴`;
+            $('pickerSearch').value = '';
+            /* Only base forms are selectable; a line that has already evolved shows its current form name. */
+            $('monGrid').innerHTML = BASES.map(id => {
+                const lv = levelOfMon(id), form = MON[formAt(id, lv)];
+                const names = LINE[id].map(x => MON[x].name).join(' ');
+                return `
+                <button class="mon-cell ${id === cur ? 'sel' : ''}" data-mon="${id}" data-name="${names}">
+                    <i class="type-dot" style="background:${MON[id].color}"></i>
+                    ${monImg(id, 'mon-thumb', false)}
+                    ${MON[id].name}<small>Lv.${lv}${form.id !== id ? ` · 已進化為${form.name}` : ''}</small>
+                </button>`;
+            }).join('');
+            openModal('pickerModal');
+        }
+
+        function pickMon(id) {
+            if (!LINE[id]) return;
+            team[state.dayId] = id;
+            LS.set(TEAM_KEY, team);
+            const meta = LS.get(metaKey(), null);
+            if (meta) { meta.mon = id; LS.set(metaKey(), meta); }
+            closeModals();
+            state.shownLv = 0; state.shownForm = 0;
+            renderTabs(); renderHero();
+            updateProgress(true);
+            jumpMascot();
+        }
+
+        function evoInfo() {
+            const base = currentMonId(), lv = levelOfMon(base), cur = MON[formAt(base, lv)], next = nextEvo(base, lv);
+            if (!next) return LINE[base].length > 1 ? `${cur.name}已經是最終型態了！Lv.${lv}` : `${cur.name}不會進化，但會越來越強！Lv.${lv}`;
+            const left = next.lvl - lv;
+            return `${cur.name} Lv.${lv}：再升 ${left} 級（約 ${left} 次完整訓練）就會進化成${next.name}！${next.special ? '（原作為特殊進化，這裡改成等級進化）' : ''}`;
+        }
+
+        /* One-time: tag existing sessions with the Pokémon that was on that day, so later team changes don't move old EXP. */
+        function stampSessionMons() {
+            listRecords().forEach(r => {
+                if (!r.trained) return;
+                const k = `${r.key}_meta`, meta = LS.get(k, null) || {};
+                if (baseOf(meta.mon)) return;
+                meta.mon = monIdFor(r.dayId);
+                LS.set(k, meta);
+            });
+        }
+
+        function init() {
+            if (!LS.get(PROGRAM_KEY, null)) LS.set(PROGRAM_KEY, program);
+            if (!LS.get(MIGRATION_KEY, false)) { stampSessionMons(); LS.set(MIGRATION_KEY, true); }
+            dateInput.value = state.date;
+            state.records = listRecords();
+            state.dayId = pickDayFor(state.date);
+            bindEvents();
+            renderAll();
+        }
+
+        init();
+    </script>
+</body>
+</html>
